@@ -1,13 +1,10 @@
 import numpy as np
 from PIL import Image 
+import matplotlib.pyplot as plt
 
 import utils.imtools as imtools
 
-def writestim(img, fname, rescale=False, mode='L'):
+def writestim(img, fname, rescale=True, mode='L'):
     
-    if(rescale):
-        img = imtools.rescale(img)
-    
-    im = Image.new(mode, np.shape(img))
-    im.putdata(img)
-    im.save(fname)
+    im = Image.fromarray(img).convert('RGB')
+    im.save(fname, "PNG")

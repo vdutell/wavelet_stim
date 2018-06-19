@@ -1,7 +1,9 @@
 import warnings
 import numpy as np
 
-def fft_lowpass(img_in, cpd_cutoff, stim_cpd):
+import utils.imtools as imtools
+
+def fft_lowpass(img_in, cpd_cutoff, stim_cpd, rescale=True):
     '''
     Lowpass filter an image at a given cpd cuttoff using Fourier representation, for a given cpd of the img stimulus
     
@@ -12,6 +14,8 @@ def fft_lowpass(img_in, cpd_cutoff, stim_cpd):
         
     Returns:
         stim (2d numpy array):   stimlulus image fourier filtered and no frequencies higher than cpd_cuttoff
+        mag (2d numpy array):   magnitude of stimulus
+        phase (2d numpy array): global phase angle of stimulus
     '''
     #make sure parameters make sense
     if cpd_cutoff > stim_cpd:
@@ -33,4 +37,8 @@ def fft_lowpass(img_in, cpd_cutoff, stim_cpd):
     ifft = np.fft.fftshift(mag * np.exp(phase * 1.0j))
     img_ifft = np.fft.ifft2(ifft).real
     
-    return img_ifft
+    # Rescale to [0,255]
+    if(rescale):
+        img_ifft = imtools.rescale_255(img_ifft)
+    
+    return img_ifft, mag, phase
