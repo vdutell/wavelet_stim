@@ -16,8 +16,8 @@ def step_stim(width_px, height_px, stepdn=False, orient=1, contrast=1):
     
     #vertical line step function
     if(orient==1):
-        stim = np.hstack((np.zeros((width_px//2, height_px)),
-                           np.ones((width_px//2, height_px))))
+        stim = np.hstack((np.zeros((height_px, width_px//2)),
+                           np.ones((height_px, width_px//2))))
         if(stepdn):
             stim = stim[:,::-1]
     
