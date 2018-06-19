@@ -17,3 +17,12 @@ def cropnresize(img, imsize):
 def rgb2gray(rgb):
     # Convert to grayscale: https://stackoverflow.com/a/12201744
     return np.dot(rgb[...,:3], [0.299, 0.587, 0.114])
+
+def rescale_255(img):
+    
+    mixpxval = np.min(img)
+    
+    img = (img - minpxval)
+    img = img/np.max(img)*255
+    
+    return(img)
