@@ -1,4 +1,8 @@
 import numpy as np
+
+import utils.fouriertools as ftools
+import utils.wavelettools as wtools
+
 def step_stim(width_px, height_px, stepdn=False, orient=1, contrast=1):
     '''
     Make a step function stimulus of a given size, orientation, and contrast
@@ -32,3 +36,39 @@ def step_stim(width_px, height_px, stepdn=False, orient=1, contrast=1):
             
     return(stim)
     
+    
+    import utils.fouriertools as ftools
+import utils.wavelettools as wtools
+
+
+def generate_stepfun_stims(stimpx_w, stimpx_h, stimdeg, cutoffs, filt='fourier', vertical=True):
+    
+    '''
+    Generate filtered stepfun stimlui at the given cuttoffos with a given filter
+    mode (See PIL modes: https://pillow.readthedocs.io/en/3.1.x/handbook/concepts.html#modes)
+    '''
+    
+    outfolder = 'filtered_stims/'
+    
+    #calc degrees and cpd
+    stim_cpd = (stimpx_w/2)/stimdeg
+    
+    stim_step = step_stim(stimpx_w, stimpx_h, orient=1, stepdn=True)
+    
+    #save our raw stim
+    stim_fname = f'{outfolder}stepfun_raw_{stim_cpd}cpd.png'
+    imwtools.writesim(stim_step, stim_fname)
+    
+    for idx, cut in enumerate(cutoffs):
+        if(filt=='fourier'):
+            stim_filt = ftools.fft_lowpass(stim_step, cut, stim_cpd)[0] 
+        elif(filt=='wavelet'):
+            stim_filt = wtools.wavelet_lowpass(stim_step, cut, stim_cpd)[0]
+        else:
+            raise ValueError('Unknown filtering type! Currently Supported Decompositions are \'fourier\' and \'wavelet\'')
+        
+        stim_fname = f'{outfolder}stepfun_filt_{cut}cpd.png'
+        imwtools.writestim(stim_filt, stim_fname)
+        print(f'Wrote {fname}')
+
+   
