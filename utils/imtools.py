@@ -20,7 +20,7 @@ def rgb2gray(rgb):
 
 def rescale_255(img):
     
-    mixpxval = np.min(img)
+    minpxval = np.min(img)
     
     img = (img - minpxval)
     img = img/np.max(img)*255
