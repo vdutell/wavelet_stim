@@ -3,6 +3,8 @@ import numpy as np
 import utils.fouriertools as ftools
 import utils.wavelettools as wtools
 
+import utils.imwritetools as imwtools
+
 def step_stim(width_px, height_px, stepdn=False, orient=1, contrast=1):
     '''
     Make a step function stimulus of a given size, orientation, and contrast
@@ -57,7 +59,7 @@ def generate_stepfun_stims(stimpx_w, stimpx_h, stimdeg, cutoffs, filt='fourier',
     
     #save our raw stim
     stim_fname = f'{outfolder}stepfun_raw_{stim_cpd}cpd.png'
-    imwtools.writesim(stim_step, stim_fname)
+    imwtools.writestim(stim_step, stim_fname)
     
     for idx, cut in enumerate(cutoffs):
         if(filt=='fourier'):
@@ -69,6 +71,6 @@ def generate_stepfun_stims(stimpx_w, stimpx_h, stimdeg, cutoffs, filt='fourier',
         
         stim_fname = f'{outfolder}stepfun_filt_{cut}cpd.png'
         imwtools.writestim(stim_filt, stim_fname)
-        print(f'Wrote {fname}')
+        print(f'Wrote {stim_fname}')
 
    
