@@ -3,7 +3,7 @@ import numpy as np
 
 def fft_lowpass(img_in, cpd_cutoff, stim_cpd):
     '''
-    Lowpass filter an image at a given cpd cuttoff, for a given cpd of the img stimulus
+    Lowpass filter an image at a given cpd cuttoff using Fourier representation, for a given cpd of the img stimulus
     
     Args:
         img_in (2d numpy array):   stimluius img
@@ -33,4 +33,4 @@ def fft_lowpass(img_in, cpd_cutoff, stim_cpd):
     ifft = np.fft.fftshift(mag * np.exp(phase * 1.0j))
     img_ifft = np.fft.ifft2(ifft).real
     
-    return img_ifft, mag, phase
+    return img_ifft
