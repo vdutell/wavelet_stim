@@ -6,3 +6,4 @@ pywt
 scipy
 scikit-image
 tqdm
+PIL
