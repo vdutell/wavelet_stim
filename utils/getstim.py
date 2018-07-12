@@ -49,7 +49,7 @@ def step_stim(width_px, height_px, stepdn=False, rescale=True, orient=1, contras
 import utils.wavelettools as wtools
 
 
-def generate_stepfun_stims(stimpx_w, stimpx_h, stimdeg, cutoffs, filt='fourier', vertical=True):
+def generate_stepfun_stims(stimpx_w, stimpx_h, stimdeg, cutoffs, filt='fourier_sharp', vertical=True):
     
     '''
     Generate filtered stepfun stimlui at the given cuttoffos with a given filter
@@ -69,14 +69,16 @@ def generate_stepfun_stims(stimpx_w, stimpx_h, stimdeg, cutoffs, filt='fourier',
     print(f'Wrote {stim_fname}')
 
     for idx, cut in enumerate(cutoffs):
-        if(filt=='fourier'):
+        if(filt=='fourier_sharp'):
             stim_filt = ftools.fft_lowpass(stim_step, cut, stim_cpd)[0] 
-        elif(filt=='wavelet'):
-            stim_filt = wtools.wavelet_lowpass(stim_step, cut, stim_cpd)[0]
+        elif(filt=='fourier_gauss'):
+            stim_filt = ftools.fft_lowpass(stim_step, cut, stim_cpd, beta=2)[0]      
+        elif(filt=='fourier_laplace'):
+            stim_filt = ftools.fft_lowpass(stim_step, cut, stim_cpd, beta=1)[0] 
         else:
-            raise ValueError('Unknown filtering type! Currently Supported Decompositions are \'fourier\' and \'wavelet\'')
+            raise ValueError('Unknown filtering type! Currently Supported Decompositions are \'fourier_sharp\', \'fourier_gauss\' and \'wavelet\'')
         
-        stim_fname = f'{outfolder}stepfun_filt_{cut}cpd.png'
+        stim_fname = f'{outfolder}stepfun_{filt}_{cut}cpd.png'
         imwtools.writestim(stim_filt, stim_fname)
         print(f'Wrote {stim_fname}')
         
