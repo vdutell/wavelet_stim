@@ -20,6 +20,7 @@ def fft_lowpass(img_in, cpd_cutoff, stim_cpd, beta=None, alpha=0.05, rescale=Tru
         stim (2d numpy array):   stimlulus image fourier filtered and no frequencies higher than cpd_cuttoff
         mag (2d numpy array):   magnitude of stimulus
         phase (2d numpy array): global phase angle of stimulus
+        filt (2d numpy array): fiter used to create filtered img
     '''
     #make sure parameters make sense
     if cpd_cutoff > stim_cpd:
@@ -43,10 +44,9 @@ def fft_lowpass(img_in, cpd_cutoff, stim_cpd, beta=None, alpha=0.05, rescale=Tru
         hwhm = alpha * (np.log(2))**(1./beta)
         #center of gaussian is cuttoff minus half witch half max
         fft_diameter_fd = fft_diameter_fc - hwhm
-        print(fft_diameter_fc)
-        print(fft_diameter_fd)
-        #fd_idx = np.where(fft_diameters > fft_diameter_fd)
-        #print(fd_idx.shape)
+        
+        if fft_diameter_fd < 0:
+            warnings.warn('Taper Top Negative - Won\'t reach full contrast.')
         #generic gauusian scaing function
         filt = np.exp(-1*(np.abs(fft_diameters-fft_diameter_fd)/alpha)**beta)
         filt[fft_diameters<fft_diameter_fd] = 1.
