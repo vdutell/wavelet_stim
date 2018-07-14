@@ -4,7 +4,9 @@ import math
 
 import utils.imtools as imtools
 
-def fft_lowpass(img_in, cpd_cutoff, stim_cpd, beta=None, alpha=0.05, rescale=True):
+
+
+def fft_lowpass(img_in, cpd_cutoff, stim_cpd, filt='sharp', rescale=True):
     '''
     Lowpass filter an image at a given cpd cuttoff using Fourier representation, for a given cpd of the img stimulus
     
@@ -12,9 +14,8 @@ def fft_lowpass(img_in, cpd_cutoff, stim_cpd, beta=None, alpha=0.05, rescale=Tru
         img_in (2d numpy array):   stimluius img
         cpd_cuttoff (float):  maximum CPD value present in output img
         stim_cpd (float):    CPD of stimulus (should be larger than cpd_cuttoff)
-        beta (int):        shape parameter for gneralized gaussian - if None then do hard cuttoff.
-        alpha (float):      width parameters for genrallized gaussian (default 1)
-        rescale (bool):
+        filt (str):        define the type of filtering desired (sharp, cosine_step, gauss_step, gauss_taper)
+
         
     Returns:
         stim (2d numpy array):   stimlulus image fourier filtered and no frequencies higher than cpd_cuttoff
@@ -34,24 +35,44 @@ def fft_lowpass(img_in, cpd_cutoff, stim_cpd, beta=None, alpha=0.05, rescale=Tru
                          np.linspace(-1, 1, img_in.shape[1])) #THIS IS NOT VALID IF STIM IS NOT SQUARE111
     fft_diameters = np.sqrt(xx**2 + yy**2)
     
-    #cuttoff amplitude for frequencies above cuttoff based on gernalized gaussian
-    if(beta==None):
+    #calculate filter
+    if(filt=='sharp'):
     # Anything greater than the cpd_cutoff will be set to 0 in the mag
         filt = (fft_diameters <= fft_diameter_fc)
         mag = np.multiply(mag, filt)
-    else:
+        
+    elif(filt=='gauss_taper'):
+        #calculate sigma needed for HWHM value to be at fc
+        sigma = fft_diameter_fc / (np.sqrt(-np.log(np.sqrt(0.5))))
+        filt = np.exp(-1*(fft_diameters/sigma)**2)
+        
+    elif(filt=='cosine_step'):
+        #cosine step taper, full power at fd, zero power at 2*fd
         #calculate half width at half max: relationship between cuttoff fq and frequency where gauss taper is centerd.
         hwhm = alpha * (np.log(2))**(1./beta)
         #center of gaussian is cuttoff minus half witch half max
         fft_diameter_fd = fft_diameter_fc - hwhm
-        
+        fft_diameter_fz = 2*fft_diameter_fc
+    
+    elif(filt=='gauss_step'):
+        #cuttoff amplitude for frequencies above cuttoff based on gernalized gaussian
+        beta=2
+        alpha=0.05
+        #calculate half width at half max: relationship between cuttoff fq and frequency where gauss taper is centerd.
+        hwhm = alpha * (np.log(2))**(1./beta)
+        #center of gaussian is cuttoff minus half witch half max
+        fft_diameter_fd = fft_diameter_fc - hwhm
+        #check if top of gaussian is negative.
         if fft_diameter_fd < 0:
             warnings.warn('Taper Top Negative - Won\'t reach full contrast.')
         #generic gauusian scaing function
         filt = np.exp(-1*(np.abs(fft_diameters-fft_diameter_fd)/alpha)**beta)
         filt[fft_diameters<fft_diameter_fd] = 1.
-        mag = np.multiply(mag,filt)
-    
+    else:
+        raise Exception('Non Recognized Filter! Returning original Signal.')
+        filt = 1
+    #multioly by fourier filter
+    mag = np.multiply(mag,filt)
     phase = np.angle(fft)
     
     # Reconstruct the image using the inverse fourier transform
