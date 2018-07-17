@@ -69,16 +69,7 @@ def generate_stepfun_stims(stimpx_w, stimpx_h, stimdeg, cutoffs, filt='fourier_s
     print(f'Wrote {stim_fname}')
 
     for idx, cut in enumerate(cutoffs):
-        if(filt=='sharp'):
-            stim_filt = ftools.fft_lowpass(stim_step, cut, stim_cpd, filt)[0] 
-        elif(filt=='cosine_step'):
-            stim_filt = ftools.fft_lowpass(stim_step, cut, stim_cpd, filt)[0]      
-        elif(filt=='gauss_step'):
-            stim_filt = ftools.fft_lowpass(stim_step, cut, stim_cpd, filt)[0] 
-        elif(filt=='gauss_taper'):
-            stim_filt = ftools.fft_lowpass(stim_step, cut, stim_cpd, filt)[0] 
-        else:
-            raise ValueError('Unknown filtering type! Currently Supported Decompositions are \'fourier_sharp\', \'fourier_gauss\' and \'wavelet\'')
+        stim_filt = ftools.fft_lowpass(stim_step, cut, stim_cpd, filt)[0] 
         
         stim_fname = f'{outfolder}stepfun_{filt}_{cut}cpd.png'
         imwtools.writestim(stim_filt, stim_fname)
