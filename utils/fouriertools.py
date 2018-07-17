@@ -15,7 +15,6 @@ def fft_lowpass(img_in, cpd_cutoff, stim_cpd, filt='sharp', rescale=True):
         cpd_cuttoff (float):  maximum CPD value present in output img
         stim_cpd (float):    CPD of stimulus (should be larger than cpd_cuttoff)
         filt (str):        define the type of filtering desired (sharp, cosine_step, gauss_step, gauss_taper)
-
         
     Returns:
         stim (2d numpy array):   stimlulus image fourier filtered and no frequencies higher than cpd_cuttoff
@@ -26,7 +25,7 @@ def fft_lowpass(img_in, cpd_cutoff, stim_cpd, filt='sharp', rescale=True):
     #make sure parameters make sense
     if cpd_cutoff > stim_cpd:
         warnings.warn('Cutoff CPD is higher than stimulus CPD')
-    
+
     #find ratio of cuttoff to max cpd so we know where to stop in fourier space
     fft_diameter_fc = cpd_cutoff/(stim_cpd)
     fft = np.fft.fftshift(np.fft.fft2(img_in))
@@ -45,18 +44,36 @@ def fft_lowpass(img_in, cpd_cutoff, stim_cpd, filt='sharp', rescale=True):
         #calculate sigma needed for HWHM value to be at fc
         sigma = fft_diameter_fc / (np.sqrt(-np.log(np.sqrt(0.5))))
         filt = np.exp(-1*(fft_diameters/sigma)**2)
+        mag = np.multiply(mag,filt)
         
     elif(filt=='cosine_step'):
         #cosine step taper, full power at fd, zero power at 2*fd
-        #calculate half width at half max: relationship between cuttoff fq and frequency where gauss taper is centerd.
-        hwhm = alpha * (np.log(2))**(1./beta)
-        #center of gaussian is cuttoff minus half witch half max
-        fft_diameter_fd = fft_diameter_fc - hwhm
-        fft_diameter_fz = 2*fft_diameter_fc
+        #def fx(x, fz):
+        #    return(0.5*(1+np.cos(np.pi*x/fz)))
+
+        #def fx_halfpower(fz):
+        #    return(fz/np.pi*np.arccos(np.sqrt(2)-1))
+        #calc fd (taper start) and fz (taper end)
+        fd = fft_diameter_fc/(1+(2/np.pi)*np.arccos(np.sqrt(2)-1))
+        #end taper at 2*fd for a power scale
+        fz = 2*fd
+
+        #can now define function
+        filt = 0.5*(1+np.cos(np.pi*(fft_diameters-fd)/(fz-fd)))
+
+        #print(f'fd={fd}')
+        #print(f'fc={fc}')
+        #print(f'fz={fz}')
+
+        filt[fft_diameters < fd] = 1
+        filt[fft_diameters > fz] = 0
+        
+        #multiply by filter
+        mag = np.multiply(mag,filt)
     
     elif(filt=='gauss_step'):
         #cuttoff amplitude for frequencies above cuttoff based on gernalized gaussian
-        beta=2
+        beta=2 #gaussian for now (beta=1 for Laplacian)
         alpha=0.05
         #calculate half width at half max: relationship between cuttoff fq and frequency where gauss taper is centerd.
         hwhm = alpha * (np.log(2))**(1./beta)
@@ -69,7 +86,7 @@ def fft_lowpass(img_in, cpd_cutoff, stim_cpd, filt='sharp', rescale=True):
         filt = np.exp(-1*(np.abs(fft_diameters-fft_diameter_fd)/alpha)**beta)
         filt[fft_diameters<fft_diameter_fd] = 1.
     else:
-        raise Exception('Non Recognized Filter! Returning original Signal.')
+        raise ValueError(f'{filt} is an unknown filtering type! Currently Supported Decompositions are \'fourier_sharp\', \'fourier_gauss\' and \'wavelet\'.  Returning original Signal.')
         filt = 1
     #multioly by fourier filter
     mag = np.multiply(mag,filt)
