@@ -48,22 +48,13 @@ def fft_lowpass(img_in, cpd_cutoff, stim_cpd, filt='sharp', rescale=True):
         
     elif(filt=='cosine_step'):
         #cosine step taper, full power at fd, zero power at 2*fd
-        #def fx(x, fz):
-        #    return(0.5*(1+np.cos(np.pi*x/fz)))
-
-        #def fx_halfpower(fz):
-        #    return(fz/np.pi*np.arccos(np.sqrt(2)-1))
+        
         #calc fd (taper start) and fz (taper end)
-        fd = fft_diameter_fc/(1+(2/np.pi)*np.arccos(np.sqrt(2)-1))
+        fd = fft_diameter_fc*np.pi/(np.arccos(np.sqrt(2)-1)+np.pi)
         #end taper at 2*fd for a power scale
         fz = 2*fd
-
         #can now define function
         filt = 0.5*(1+np.cos(np.pi*(fft_diameters-fd)/(fz-fd)))
-
-        #print(f'fd={fd}')
-        #print(f'fc={fc}')
-        #print(f'fz={fz}')
 
         filt[fft_diameters < fd] = 1
         filt[fft_diameters > fz] = 0
