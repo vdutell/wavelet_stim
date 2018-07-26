@@ -5,7 +5,6 @@ import utils.fouriertools as ftools
 import utils.wavelettools as wtools
 import utils.imwritetools as imwtools
 
-
 def step_stim(width_px, height_px, stepdn=False, rescale=True, orient=1, contrast=1):
     '''
     Make a step function stimulus of a given size, orientation, and contrast
@@ -43,38 +42,49 @@ def step_stim(width_px, height_px, stepdn=False, rescale=True, orient=1, contras
     stim = stim*contrast
             
     return(stim)
-    
-    
-    import utils.fouriertools as ftools
-import utils.wavelettools as wtools
 
-
-def generate_stepfun_stims(stimpx_w, stimpx_h, stimdeg, cutoffs, filt='fourier_sharp', vertical=True):
+def generate_filtered_stims(stimpx_w, stimpx_h, stimdeg, cutoffs, filt='fourier_sharp', stim_type='stepfun'):
     
     '''
-    Generate filtered stepfun stimlui at the given cuttoffos with a given filter
+    Generate filtered stimlui at the given cuttoffos with a given filter
     mode (See PIL modes: https://pillow.readthedocs.io/en/3.1.x/handbook/concepts.html#modes)
     '''
     
-    outfolder = 'filtered_stims/'
+    stim_outfolder = 'filtered_stims/'
+    ft_outfolder = stim_outfolder+'fts/'
     
     #calc degrees and cpd
     stim_cpd = (stimpx_w/2)/stimdeg
     
-    stim_step = step_stim(stimpx_w, stimpx_h, orient=1, stepdn=True)
-    
+    #create stim step
+    if(stim_type == 'stepfun'):
+        stim = step_stim(stimpx_w, stimpx_h, orient=1, stepdn=True)
     #save our raw stim
-    stim_fname = f'{outfolder}stepfun_raw_{stim_cpd}cpd.png'
-    imwtools.writestim(stim_step, stim_fname)
-    print(f'Wrote {stim_fname}')
+    stim_fname = f'{stim_outfolder}{stim_type}_raw_{int(stim_cpd)}cpd.png'
+    imwtools.writestim(stim, stim_fname)
+    # create our raw stim's FT
+    stim_ft = ftools.gen_azm_ft(stim, np.ones_like(stim), stim, stim_cpd, filt)
+    #save our raw stim's ft
+    stim_ft_fname = f'{ft_outfolder}{stim_type}_raw_{int(stim_cpd)}cpd_ft.png'
+    imwtools.writeplot(stim_ft, stim_ft_fname)
+    print(f'Wrote {stim_ft_fname}')
 
+    # loop through cuttoff frequencies and filter
     for idx, cut in enumerate(cutoffs):
-        stim_filt = ftools.fft_lowpass(stim_step, cut, stim_cpd, filt)[0] 
+        filt_stim, stim_mag, stim_phase, stim_filter, warn_flag = ftools.fft_lowpass(stim, cut, stim_cpd, filt)
+        stim_filt_ft = ftools.gen_azm_ft(filt_stim, stim_filter, stim, stim_cpd, filt)
+        # if we had a warning during generating the image, reflect in image filename
+        if(warn_flag):
+            stim_fname = f'{stim_outfolder}{stim_type}_{filt}_{int(cut)}cpd_warn.png'
+            stim_ft_fname = f'{ft_outfolder}{stim_type}{filt}_{int(cut)}cpd_ft_warn.png'
+        else:
+            stim_fname = f'{stim_outfolder}{stim_type}_{filt}_{int(cut)}cpd.png'
+            stim_ft_fname = f'{ft_outfolder}{stim_type}_{filt}_{int(cut)}cpd_ft.png'
+        # write to disk
+        imwtools.writestim(filt_stim, stim_fname)
+        imwtools.writeplot(stim_filt_ft, stim_ft_fname)
+        print(f'Wrote {stim_fname}; {stim_ft_fname}')
         
-        stim_fname = f'{outfolder}stepfun_{filt}_{cut}cpd.png'
-        imwtools.writestim(stim_filt, stim_fname)
-        print(f'Wrote {stim_fname}')
-        
-    return(stim_filt)
+    return(filt_stim)
 
    

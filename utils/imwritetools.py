@@ -8,3 +8,10 @@ def writestim(img, fname, rescale=True, mode='L'):
     
     im = Image.fromarray(img).convert('RGB')
     im.save(fname, "PNG")
+    return()
+
+def writeplot(plot, fname):
+    
+    plt.savefig(fname)
+    plt.close()
+    return()

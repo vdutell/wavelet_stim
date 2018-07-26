@@ -23,6 +23,6 @@ def rescale_255(img):
     minpxval = np.min(img)
     
     img = (img - minpxval)
-    img = img/np.max(img)*255
+    img = img/(np.max(img)+0.01)*255
     
     return(img)
