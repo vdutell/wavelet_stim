@@ -63,7 +63,7 @@ def generate_filtered_stims(stimpx_w, stimpx_h, stimdeg, cutoffs, filt='fourier_
     stim_fname = f'{stim_outfolder}{stim_type}_raw_{int(stim_cpd)}cpd.png'
     imwtools.writestim(stim, stim_fname)
     # create our raw stim's FT
-    stim_ft = ftools.gen_azm_ft(stim, np.ones_like(stim), stim, stim_cpd, filt)
+    stim_ft = ftools.gen_azm_ft(stim, np.ones_like(stim), stim, stim_cpd, filt, int(stim_cpd))
     #save our raw stim's ft
     stim_ft_fname = f'{ft_outfolder}{stim_type}_raw_{int(stim_cpd)}cpd_ft.png'
     imwtools.writeplot(stim_ft, stim_ft_fname)
@@ -72,7 +72,7 @@ def generate_filtered_stims(stimpx_w, stimpx_h, stimdeg, cutoffs, filt='fourier_
     # loop through cuttoff frequencies and filter
     for idx, cut in enumerate(cutoffs):
         filt_stim, stim_mag, stim_phase, stim_filter, warn_flag = ftools.fft_lowpass(stim, cut, stim_cpd, filt)
-        stim_filt_ft = ftools.gen_azm_ft(filt_stim, stim_filter, stim, stim_cpd, filt)
+        stim_filt_ft = ftools.gen_azm_ft(filt_stim, stim_filter, stim, stim_cpd, filt, cut)
         # if we had a warning during generating the image, reflect in image filename
         if(warn_flag):
             stim_fname = f'{stim_outfolder}{stim_type}_{filt}_{int(cut)}cpd_warn.png'

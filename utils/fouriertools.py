@@ -58,7 +58,7 @@ def azimuthalAverage(image, center=None):
     
     return(radial_prof)
 
-def gen_azm_ft(filtered_stim, filt, raw_stim, stim_cpd, filt_name):
+def gen_azm_ft(filtered_stim, filt, raw_stim, stim_cpd, filt_name, fc):
     
     # Circular Averaged Power Spectrum - filtered_stim
     filtered_ft = azimuthalAverage(np.abs(np.fft.fftshift(np.fft.fft2(filtered_stim)))**2)
@@ -66,19 +66,29 @@ def gen_azm_ft(filtered_stim, filt, raw_stim, stim_cpd, filt_name):
     raw_ft = azimuthalAverage(np.abs(np.fft.fftshift(np.fft.fft2(raw_stim)))**2)
     # Circular Averaged Power Spectrum - filter
     filt_ft = azimuthalAverage(filt**2)
+    
+    #normalize all to max 1
+    filtered_ft /= np.max(filtered_ft)
+    raw_ft /= np.max(raw_ft)
+    filt_ft /= np.max(filt_ft)
+    
     # Get the Frequencies in CPD
     cpds = np.linspace(0,stim_cpd,len(raw_ft))
-    #cpds = np.fft.fftshift(np.fft.fftfreq(len(raw_ft), 1/stim_cpd*2))
-    # Take the first half because its's circular
-    
+
     #plot them all
     azm_plt = plt.figure(figsize = (8,6))
-    azm_plt = plt.semilogy(cpds, filtered_ft, label='filtered_stim',)
-    azm_plt = plt.semilogy(cpds, raw_ft, label='raw_stim')
-    azm_plt = plt.semilogy(cpds, filt_ft, label='filter')
+    azm_plt = plt.loglog(cpds, filtered_ft,  '.', 
+                         label='filtered_stim')
+    azm_plt = plt.loglog(cpds, raw_ft, '.', label='raw_stim')
+    azm_plt = plt.loglog(cpds, filt_ft, '.', label='filter')
+    #azm_plt = plt.plot(cpds, filtered_ft, label='filtered_stim',)
+    #azm_plt = plt.plot(cpds, raw_ft, label='raw_stim')
+    #azm_plt = plt.plot(cpds, filt_ft, label='filter')
+    
+    azm_plt = plt.axvline(fc, c='k')
     plt.xlabel('Frequency (cycles/deg)')
     plt.ylabel('Amplitude')
-    plt.title(f'Stim Fourier Spectra - {filt_name} Filter')
+    plt.title(f'Stim Fourier Spectra - {filt_name} Filter: Fc={fc}')
     plt.legend()
     
     return(azm_plt)
@@ -117,6 +127,7 @@ def filt_gauss_step(f, fc):
         warn_flag = True
     #generic gauusian scaing function
     filt = np.exp(-1*(np.abs(f-fd)/alpha)**beta)
+    filt /= np.max(filt)
     filt[f<fd] = 1.
     return(filt, warn_flag)
 
@@ -161,9 +172,10 @@ def fft_lowpass(img_in, cpd_cutoff, stim_cpd, filt_name='sharp', rescale=True):
         
     elif(filt_name=='gauss_taper'):
         #calculate sigma needed for HWHM value to be at fc
-        sigma = fft_diameter_fc / (np.sqrt(-np.log(np.sqrt(0.5))))
-        filt = np.exp(-1*(fft_diameters/(sigma+0.01))**2)
-        
+        #sigma = fft_diameter_fc / (np.sqrt(-np.log(np.sqrt(0.5))))
+        #rescale to 100 so we don't get numerical instability
+        sigma = fft_diameter_fc*100000 / np.sqrt(-2*np.log(np.sqrt(0.5)))
+        filt = np.exp(-1.5*((fft_diameters*100000)/(sigma))**2)
     elif(filt_name=='cosine_step'):
         filt, warn_flag = filt_cosine_step(fft_diameters, fft_diameter_fc)
     
