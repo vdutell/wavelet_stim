@@ -43,7 +43,7 @@ def step_stim(width_px, height_px, stepdn=False, rescale=True, orient=1, contras
             
     return(stim)
 
-def generate_filtered_stims(stimpx_w, stimpx_h, stimdeg, cutoffs, filt='fourier_sharp', stim_type='stepfun'):
+def generate_filtered_stims(stim, stimdeg, cutoffs, filt='fourier_sharp', stim_type='stepfun'):
     
     '''
     Generate filtered stimlui at the given cuttoffos with a given filter
@@ -53,12 +53,11 @@ def generate_filtered_stims(stimpx_w, stimpx_h, stimdeg, cutoffs, filt='fourier_
     stim_outfolder = 'filtered_stims/'
     ft_outfolder = stim_outfolder+'fts/'
     
+    stimpx_w, stimpx_h = np.shape(stim)
+    
     #calc degrees and cpd
     stim_cpd = (stimpx_w/2)/stimdeg
     
-    #create stim step
-    if(stim_type == 'stepfun'):
-        stim = step_stim(stimpx_w, stimpx_h, orient=1, stepdn=True)
     #save our raw stim
     stim_fname = f'{stim_outfolder}{stim_type}_raw_{int(stim_cpd)}cpd.png'
     imwtools.writestim(stim, stim_fname)
