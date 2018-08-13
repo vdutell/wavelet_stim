@@ -43,14 +43,14 @@ def step_stim(width_px, height_px, stepdn=False, rescale=True, orient=1, contras
             
     return(stim)
 
-def generate_filtered_stims(stim, stimdeg, cutoffs, filt='fourier_sharp', stim_type='stepfun'):
+def generate_spatial_filtered_stims(stim, stimdeg, cutoffs, filt='fourier_sharp', stim_type='stepfun'):
     
     '''
     Generate filtered stimlui at the given cuttoffos with a given filter
     mode (See PIL modes: https://pillow.readthedocs.io/en/3.1.x/handbook/concepts.html#modes)
     '''
     
-    stim_outfolder = 'filtered_stims/'
+    stim_outfolder = 'filtered_stims/spatial/'
     ft_outfolder = stim_outfolder+'fts/'
     
     stimpx_w, stimpx_h = np.shape(stim)
