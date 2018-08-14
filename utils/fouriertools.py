@@ -95,26 +95,27 @@ def gen_azm_spatial_ft(filtered_stim, filt, raw_stim, stim_cpd, filt_name, fc):
 
 def gen_temporal_ft(filtered_stim, filt, raw_stim, stim_fps, filt_name, fc):
     
-    # Circular Averaged Power Spectrum - filtered_stim
-    filtered_ft = np.mean(np.abs(np.fft.fftshift(np.fft.fft(filtered_stim,axis=2)))**2,axis=(0,1))
-     # Circular Averaged Power Spectrum - raw_stim
-    raw_ft =  np.mean(np.abs(np.fft.fftshift(np.fft.fft(raw_stim,axis=2)))**2,axis=(0,1))
+    # Power Spectrum - filtered_stim
+    filtered_ft = np.mean(np.abs(np.fft.fftshift(np.fft.fft(filtered_stim,axis=0)))**2,axis=(1,2))
+    filtered_ft = filtered_ft[len(filtered_ft)//2:]
+    # Power Spectrum - raw_stim
+    raw_ft =  np.mean(np.abs(np.fft.fftshift(np.fft.fft(raw_stim,axis=0)))**2,axis=(1,2))
+    raw_ft = raw_ft[len(raw_ft)//2:]
     # Circular Averaged Power Spectrum - filter
-    filt_ft = filt**2
-    
+    filt_ft = np.mean(filt**2,axis=(1,2))
+    filt_ft = filt_ft[len(filt_ft)//2:]
+
     #normalize all to max 1
     filtered_ft /= np.max(filtered_ft)
     raw_ft /= np.max(raw_ft)
     filt_ft /= np.max(filt_ft)
     
-    # Get the Frequencies in fps
-    fps_fqs = np.linspace(0,stim_fps,len(raw_ft))
+    # Get the Frequencies in fps (0 to nyquist)
+    fps_fqs = np.linspace(0,stim_fps//2,len(raw_ft))
 
     #plot them all
     fq_plt = plt.figure(figsize = (8,6))
-    fq_plt = plt.loglog(fps_fqs, filtered_ft,  '.', 
-                         label='filtered_stim')
-    print(len(fps_fqs))
+    fq_plt = plt.loglog(fps_fqs, filtered_ft,  '.', label='filtered_stim')
     fq_plt = plt.loglog(fps_fqs, raw_ft, '.', label='raw_stim')
     fq_plt = plt.loglog(fps_fqs, filt_ft, '.', label='filter')
     #fq_plt = plt.plot(cpds, filtered_ft, label='filtered_stim',)
@@ -127,7 +128,7 @@ def gen_temporal_ft(filtered_stim, filt, raw_stim, stim_fps, filt_name, fc):
     plt.title(f'Stim Fourier Spectra - {filt_name} Filter: Fc={fc}')
     plt.legend()
     
-    return(azm_plt)
+    return(fq_plt)
 
 
 def filt_cosine_step(f, fc):
@@ -229,6 +230,78 @@ def fft_lowpass(img_in, cpd_cutoff, stim_cpd, filt_name='sharp', rescale=True):
     # Reconstruct the image using the inverse fourier transform
     ifft = np.fft.fftshift(mag * np.exp(phase * 1.0j))
     img_ifft = np.fft.ifft2(ifft).real
+    
+    # Rescale to [0,255]
+    if(rescale):
+        img_ifft = imtools.rescale_255(img_ifft)
+    
+    return img_ifft, mag, phase, filt, warn_flag
+
+def fft_temporal_lowpass(stim_in, fps_cutoff, stim_fps, filt_name='sharp', rescale=True):
+    '''
+    Lowpass filter an movie at a given frequency cuttoff using Fourier representation, for a given fps of the stimulus
+    
+    Args:
+        stim_in (3d numpy array):   stimluius movie (time, x, y)
+        fps_cuttoff (float):  maximum fps value present in output img
+        stim_fps (float):    FPS of stimulus (should be larger than fps_cuttoff)
+        filt_name (str):     define the type of filtering desired (sharp, cosine_step, gauss_step, gauss_taper)
+        
+    Returns:
+        stim (2d numpy array):   stimlulus image fourier filtered and no frequencies higher than cpd_cuttoff
+        mag (2d numpy array):   magnitude of stimulus
+        phase (2d numpy array): global phase angle of stimulus
+        filt (2d numpy array): fiter used to create filtered img
+        warn_flag (bool):   flag  if we had a warning in generating image
+    '''
+    
+    # warn flag is false by default
+    warn_flag = False
+    #make sure parameters make sense
+    if fps_cutoff > stim_fps:
+        warnings.warn('Cutoff FPS is higher than stimulus FPS')
+        warn_flag=True
+    #size of stim
+    stimf, stimx, stimy = np.shape(stim_in)
+        
+    #find ratio of cuttoff to max cpd so we know where to stop in fourier space
+    fft_len_fc = fps_cutoff/(stim_fps)
+    fft = np.fft.fftshift(np.fft.fft(stim_in,axis=0))
+    mag = np.abs(fft)
+    fft_diameters = np.tile(np.abs(np.linspace(-1,1,stim_fps)),(stimx, stimy, 1)).T
+    print(fft_diameters[:,1,1])
+    print(fft_len_fc)
+    
+    #calculate filter
+    if(filt_name=='sharp'):
+    # Anything greater than cpd_cutoff set to 0 in the mag
+        filt = (fft_diameters <= fft_len_fc) 
+        
+    elif(filt_name=='gauss_taper'):
+        #calculate sigma needed for HWHM value to be at fc
+        #sigma = fft_diameter_fc / (np.sqrt(-np.log(np.sqrt(0.5))))
+        #rescale to 100 so we don't get numerical instability
+        sigma = fft_len_fc*100000 / np.sqrt(-2*np.log(np.sqrt(0.5)))
+        filt = np.exp(-1.5*((fft_diameters*100000)/(sigma))**2)
+    elif(filt_name=='cosine_step'):
+        filt, warn_flag = filt_cosine_step(fft_diameters, fft_len_fc)
+    
+    elif(filt_name=='gauss_step'):
+        filt, warn_flag = filt_gauss_step(fft_diameters, fft_len_fc)
+    
+    else:
+        raise ValueError(f'{filt_name} is an unknown filtering type! Currently Supported Decompositions are \'fourier_sharp\', \'fourier_gauss\' and \'wavelet\'.  Returning original Signal.')
+        filt = 1
+        
+    #multiply by arbitrary fourier filter
+    mag = np.multiply(mag,filt)
+    print(mag[:,1,1])
+
+    phase = np.angle(fft)
+    
+    # Reconstruct the movie using the inverse fourier transform
+    ifft = np.fft.fftshift(mag * np.exp(phase * 1.0j))
+    img_ifft = np.fft.ifft(ifft,axis=0).real
     
     # Rescale to [0,255]
     if(rescale):

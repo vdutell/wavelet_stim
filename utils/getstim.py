@@ -119,7 +119,7 @@ def generate_spatial_filtered_stims(stim, stimdeg, cutoffs, filt='fourier_sharp'
         imwtools.writeplot(stim_filt_ft, stim_ft_fname)
         print(f'Wrote {stim_fname}; {stim_ft_fname}')
         
-    return(filt_stim)
+    return()
 
    
     
@@ -137,8 +137,7 @@ def generate_temporal_filtered_stims(stim, stimfps, cutoffs, filt='fourier_sharp
     
     #calc degrees and cpd
     #stim_cpd = (stimpx_w/2)/stimdeg
-    
-    
+
     #save our raw stim
     stim_dir = f'{stim_outfolder}{stim_type}_raw_{int(stimfps)}fps/'
     pathlib.Path(stim_dir).mkdir(exist_ok=True)
@@ -154,23 +153,23 @@ def generate_temporal_filtered_stims(stim, stimfps, cutoffs, filt='fourier_sharp
 
     # loop through cuttoff frequencies and filter
     for idx, cut in enumerate(cutoffs):
-        filt_stim, stim_mag, stim_phase, stim_filter, warn_flag = ftools.fft_temporal_lowpass(stim, cut, stim_cpd, filt)
-#        stim_filt_ft = ftools.gen_azm_ft(filt_stim, stim_filter, stim, stim_cpd, filt, cut)
-#        # if we had a warning during generating the image, reflect in image filename
-##        if(warn_flag):
-#            stim_fname = f'{stim_outfolder}{stim_type}_{filt}_{int(cut)}cpd_warn.png'
-#            stim_ft_fname = f'{ft_outfolder}{stim_type}{filt}_{int(cut)}cpd_ft_warn.png'
-##        else:
- #           stim_fname = f'{stim_outfolder}{stim_type}_{filt}_{int(cut)}cpd.png'
- #           stim_ft_fname = f'{ft_outfolder}{stim_type}_{filt}_{int(cut)}cpd_ft.png'
- #       # write to disk
+        filt_stim, stim_mag, stim_phase, stim_filter, warn_flag = ftools.fft_temporal_lowpass(stim, cut, stimfps, filt)
+        stim_filt_ft = ftools.gen_temporal_ft(filt_stim, stim_filter, stim, stimfps, filt, cut)
+        # if we had a warning during generating the image, reflect in image filename
+        if(warn_flag):
+            stim_dir = f'{stim_outfolder}{stim_type}_{filt}_{int(cut)}fps_warn/'
+            stim_ft_fname = stim_dir + 'ft.png'
+        else:
+            stim_dir = f'{stim_outfolder}{stim_type}_{filt}_{int(cut)}fps/'
+            stim_ft_fname = stim_dir + 'ft.png'
         #save our fitlered stim
-    stim_dir = f'{stim_outfolder}{stim_type}_{filt}_{int(cut)}fps/'
-    pathlib.Path(stim_dir).mkdir(exist_ok=True)
-    for i, frame in enumerate(filt_stim):
-        stim_fname = rawstim_dir + f'frame_{i+1}.png'
-        imwtools.writestim(frame, stim_fname)
- ##       imwtools.writeplot(stim_filt_ft, stim_ft_fname)
-  #      print(f'Wrote {stim_fname}; {stim_ft_fname}')
+        pathlib.Path(stim_dir).mkdir(exist_ok=True)
+        for i, frame in enumerate(filt_stim):
+            stim_fname = stim_dir + f'frame_{i+1}.png'
+            imwtools.writestim(frame, stim_fname)
+        #save our fourier transform
+        imwtools.writeplot(stim_filt_ft, stim_ft_fname)
+
+        print(f'Wrote {stim_fname}; {stim_ft_fname}')
         
-  #  return(filt_stim)
+    return()
