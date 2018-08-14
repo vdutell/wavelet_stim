@@ -58,7 +58,7 @@ def azimuthalAverage(image, center=None):
     
     return(radial_prof)
 
-def gen_azm_ft(filtered_stim, filt, raw_stim, stim_cpd, filt_name, fc):
+def gen_azm_spatial_ft(filtered_stim, filt, raw_stim, stim_cpd, filt_name, fc):
     
     # Circular Averaged Power Spectrum - filtered_stim
     filtered_ft = azimuthalAverage(np.abs(np.fft.fftshift(np.fft.fft2(filtered_stim)))**2)
@@ -87,7 +87,43 @@ def gen_azm_ft(filtered_stim, filt, raw_stim, stim_cpd, filt_name, fc):
     
     azm_plt = plt.axvline(fc, c='k')
     plt.xlabel('Frequency (cycles/deg)')
-    plt.ylabel('Amplitude')
+    plt.ylabel('Power')
+    plt.title(f'Stim Fourier Spectra - {filt_name} Filter: Fc={fc}')
+    plt.legend()
+    
+    return(azm_plt)
+
+def gen_temporal_ft(filtered_stim, filt, raw_stim, stim_fps, filt_name, fc):
+    
+    # Circular Averaged Power Spectrum - filtered_stim
+    filtered_ft = np.mean(np.abs(np.fft.fftshift(np.fft.fft(filtered_stim,axis=2)))**2,axis=(0,1))
+     # Circular Averaged Power Spectrum - raw_stim
+    raw_ft =  np.mean(np.abs(np.fft.fftshift(np.fft.fft(raw_stim,axis=2)))**2,axis=(0,1))
+    # Circular Averaged Power Spectrum - filter
+    filt_ft = filt**2
+    
+    #normalize all to max 1
+    filtered_ft /= np.max(filtered_ft)
+    raw_ft /= np.max(raw_ft)
+    filt_ft /= np.max(filt_ft)
+    
+    # Get the Frequencies in fps
+    fps_fqs = np.linspace(0,stim_fps,len(raw_ft))
+
+    #plot them all
+    fq_plt = plt.figure(figsize = (8,6))
+    fq_plt = plt.loglog(fps_fqs, filtered_ft,  '.', 
+                         label='filtered_stim')
+    print(len(fps_fqs))
+    fq_plt = plt.loglog(fps_fqs, raw_ft, '.', label='raw_stim')
+    fq_plt = plt.loglog(fps_fqs, filt_ft, '.', label='filter')
+    #fq_plt = plt.plot(cpds, filtered_ft, label='filtered_stim',)
+    #fq_plt = plt.plot(cpds, raw_ft, label='raw_stim')
+    #fq_plt = plt.plot(cpds, filt_ft, label='filter')
+    
+    fq_plt = plt.axvline(fc, c='k')
+    plt.xlabel('Frequency (frames/sec)')
+    plt.ylabel('Power')
     plt.title(f'Stim Fourier Spectra - {filt_name} Filter: Fc={fc}')
     plt.legend()
     
