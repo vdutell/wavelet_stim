@@ -139,7 +139,7 @@ def generate_temporal_filtered_stims(stim, stimfps, cutoffs, filt='fourier_sharp
     #stim_cpd = (stimpx_w/2)/stimdeg
 
     #save our raw stim
-    stim_dir = f'{stim_outfolder}{stim_type}_raw_{int(stimfps)}fps/'
+    stim_dir = f'{stim_outfolder}{stim_type}_{int(stimfps)}fps_raw/'
     pathlib.Path(stim_dir).mkdir(exist_ok=True)
     for i, frame in enumerate(stim):
         stim_fname = stim_dir + f'frame_{i+1}.png'
@@ -147,8 +147,7 @@ def generate_temporal_filtered_stims(stim, stimfps, cutoffs, filt='fourier_sharp
     # create our raw stim's FT
     stim_ft = ftools.gen_temporal_ft(stim, np.ones_like(stim), stim, stimfps, filt, int(stimfps))
     #save our raw stim's ft
-    stim_ft_fname = f'{ft_outfolder}{stim_type}_raw_{int(stimfps)}fps_ft.png'
-#    imwtools.writeplot(stim_ft, stim_ft_fname)
+    imwtools.writeplot(stim_ft, f'{stim_dir}ft.png')
 #    print(f'Wrote {stim_ft_fname}')
 
     # loop through cuttoff frequencies and filter
@@ -157,19 +156,17 @@ def generate_temporal_filtered_stims(stim, stimfps, cutoffs, filt='fourier_sharp
         stim_filt_ft = ftools.gen_temporal_ft(filt_stim, stim_filter, stim, stimfps, filt, cut)
         # if we had a warning during generating the image, reflect in image filename
         if(warn_flag):
-            stim_dir = f'{stim_outfolder}{stim_type}_{filt}_{int(cut)}fps_warn/'
-            stim_ft_fname = stim_dir + 'ft.png'
+            stim_dir = f'{stim_outfolder}{stim_type}_{filt}_{int(stimfps)}fps_{int(cut)}cut_warn/'
         else:
-            stim_dir = f'{stim_outfolder}{stim_type}_{filt}_{int(cut)}fps/'
-            stim_ft_fname = stim_dir + 'ft.png'
+            stim_dir = f'{stim_outfolder}{stim_type}_{filt}_{int(stimfps)}fps_{int(cut)}cut/'
         #save our fitlered stim
         pathlib.Path(stim_dir).mkdir(exist_ok=True)
         for i, frame in enumerate(filt_stim):
             stim_fname = stim_dir + f'frame_{i+1}.png'
             imwtools.writestim(frame, stim_fname)
         #save our fourier transform
-        imwtools.writeplot(stim_filt_ft, stim_ft_fname)
+        imwtools.writeplot(stim_filt_ft, stim_dir + 'ft.png')
 
-        print(f'Wrote {stim_fname}; {stim_ft_fname}')
+        print(f'Wrote {stim_fname}')
         
     return()

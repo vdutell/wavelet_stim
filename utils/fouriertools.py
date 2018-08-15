@@ -74,7 +74,7 @@ def gen_azm_spatial_ft(filtered_stim, filt, raw_stim, stim_cpd, filt_name, fc):
     
     # Get the Frequencies in CPD
     cpds = np.linspace(0,stim_cpd,len(raw_ft))
-
+    
     #plot them all
     azm_plt = plt.figure(figsize = (8,6))
     azm_plt = plt.loglog(cpds, filtered_ft,  '.', 
@@ -111,16 +111,25 @@ def gen_temporal_ft(filtered_stim, filt, raw_stim, stim_fps, filt_name, fc):
     filt_ft /= np.max(filt_ft)
     
     # Get the Frequencies in fps (0 to nyquist)
-    fps_fqs = np.linspace(0,stim_fps//2,len(raw_ft))
+    fps_fqs = np.linspace(0,stim_fps/2,len(raw_ft))
+    
+    #print('fqs:')
+    #print(fps_fqs)
+    #print('filtered:')
+    #print(filtered_ft)
+    #print('filter:')
+    #print(filt_ft)#, raw_ft)
 
     #plot them all
     fq_plt = plt.figure(figsize = (8,6))
     fq_plt = plt.loglog(fps_fqs, filtered_ft,  '.', label='filtered_stim')
     fq_plt = plt.loglog(fps_fqs, raw_ft, '.', label='raw_stim')
     fq_plt = plt.loglog(fps_fqs, filt_ft, '.', label='filter')
-    #fq_plt = plt.plot(cpds, filtered_ft, label='filtered_stim',)
-    #fq_plt = plt.plot(cpds, raw_ft, label='raw_stim')
-    #fq_plt = plt.plot(cpds, filt_ft, label='filter')
+    
+    #fq_plt = plt.figure(figsize = (8,6))
+    #fq_plt = plt.plot(fps_fqs, filtered_ft,  '.', label='filtered_stim')
+    #fq_plt = plt.plot(fps_fqs, raw_ft, '.', label='raw_stim')
+    #fq_plt = plt.plot(fps_fqs, filt_ft, '.', label='filter')
     
     fq_plt = plt.axvline(fc, c='k')
     plt.xlabel('Frequency (frames/sec)')
@@ -265,12 +274,12 @@ def fft_temporal_lowpass(stim_in, fps_cutoff, stim_fps, filt_name='sharp', resca
     stimf, stimx, stimy = np.shape(stim_in)
         
     #find ratio of cuttoff to max cpd so we know where to stop in fourier space
-    fft_len_fc = fps_cutoff/(stim_fps)
+    fft_len_fc = fps_cutoff/(stim_fps/2)
     fft = np.fft.fftshift(np.fft.fft(stim_in,axis=0))
     mag = np.abs(fft)
-    fft_diameters = np.tile(np.abs(np.linspace(-1,1,stim_fps)),(stimx, stimy, 1)).T
-    print(fft_diameters[:,1,1])
-    print(fft_len_fc)
+    fft_diameters = np.tile(np.abs(np.linspace(-1,1,stimf)),(stimx, stimy, 1)).T
+    #print(fft_diameters[:,1,1])
+    #print(fft_len_fc)
     
     #calculate filter
     if(filt_name=='sharp'):
@@ -295,7 +304,7 @@ def fft_temporal_lowpass(stim_in, fps_cutoff, stim_fps, filt_name='sharp', resca
         
     #multiply by arbitrary fourier filter
     mag = np.multiply(mag,filt)
-    print(mag[:,1,1])
+    #print(mag[:,1,1])
 
     phase = np.angle(fft)
     
