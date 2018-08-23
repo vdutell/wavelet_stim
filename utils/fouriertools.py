@@ -552,37 +552,51 @@ def make_3d_ft(movie, chunkshape, fps, ppd):
 
 #def da_spatiotemporal_ft(amp_spectrum, fqspace, fqtime, nsamples = 7, figname='nameless', logscale=False):
     
-def st_ft(stim):
-    # Amplitude Spectrum - filtered_stim
-    ft3d = np.abs(np.fft.fftshift(np.fft.fftn(stim)))
+def azm_avg_frames(stim):
     ft = []
-    for i, frame in enumerate(ft3d):
+    for i, frame in enumerate(stim):
         ft.append(azimuthalAverage(frame))
     ft = np.array(ft)
 
     #normalizeto max 1
     ft /= np.max(ft)
-    
     return(ft)
     
+    
+def st_ft(stim):
+    # Amplitude Spectrum - filtered_stim
+    ft3d = np.abs(np.fft.fftshift(np.fft.fftn(stim)))
+    ft = azm_avg_frames(ft3d)
+    
+    return(ft)
+
+
+
 def da_spatiotemporal_ft(ft, stim_cpd, stim_fps, filt_name, fc_s, fc_t, save_fname, nsamples=5, logscale=False):
     
     figname = f'{filt_name}: Fc_s={fc_s}, Fc_t={fc_t}'
     
+    #print(np.shape(ft)) #debugging
     ntfqs, nsfqs = np.shape(ft)
     
     # Get the frequencies in cpd
     fqspace= np.linspace(0,stim_cpd, nsfqs)
     # Get the Frequencies in fps (0 to nyquist)
-    fqtime = np.linspace(0,stim_fps/2, ntfqs)
+    fqtime = np.linspace(0,stim_fps//2, ntfqs)
+    
+    #sampling indexes:
+    space_start_sample = len(fqspace)//20
+    space_end_sample = len(fqspace) - space_start_sample
+    time_start_sample = len(fqtime)//20
+    time_end_sample = len(fqtime) - time_start_sample
     
     #colors for lines
-    spacesamplefqs_idx = np.linspace(fqspace[1],
-                                 fqspace[-1],
-                                 nsamples).astype(int)
-    timesamplefqs_idx = np.linspace(fqtime[1],
-                                fqtime[-1],
-                                nsamples).astype(int)
+    spacesamplefqs_idx = np.linspace(space_start_sample,
+                                     space_end_sample,
+                                     nsamples).astype(int)
+    timesamplefqs_idx = np.linspace(time_start_sample,
+                                    time_end_sample,
+                                    nsamples).astype(int)
 
     spacecolors = np.array(['red', 'orange', 'yellow', 'green', 'blue', 'indigo', 'violet'])#[::-1]
     timecolors = spacecolors
@@ -601,12 +615,12 @@ def da_spatiotemporal_ft(ft, stim_cpd, stim_fps, filt_name, fc_s, fc_t, save_fna
     
     # plot the correct spectrum (power/amplitude/psd)
     # http://www.ldeo.columbia.edu/users/menke/research_notes/menke_research_note157.pdf
-    joint_power = np.abs(ft)**2
+    joint_psd = 2/len(fqspace)*len(fqtime)*(np.abs(ft)**2)
     #joint_psd = 2/(len(fqspace)*len(fqtime)) * (np.abs(amp_spectrum)**2)
-    plot_spectrum = joint_power.T
+    plot_spectrum = joint_psd.T
     #convert to db
-   # plot_spectrum /= np.max(plot_spectrum) #normalize so max val is zero (DB scaling)
-    plot_spectrum = np.log10(plot_spectrum)
+    plot_spectrum /= np.max(plot_spectrum) #normalize so max val is zero (DB scaling)
+    plot_spectrum = 20*np.log10(plot_spectrum)
 
     hm = axes_hm.contourf(fqtime, fqspace, plot_spectrum,
                          cmap='gray')
@@ -637,7 +651,7 @@ def da_spatiotemporal_ft(ft, stim_cpd, stim_fps, filt_name, fc_s, fc_t, save_fna
     
     axes_space.set_title('Spatial Frequency')
     axes_space.set_xlabel('cpd')
-    axes_space.set_ylabel(f'{figname} Log Power')
+    axes_space.set_ylabel('Log Power')
     axes_space.set_xlim(fqspace[1],fqspace[-1])
     axes_space.xaxis.set_major_formatter(mpl.ticker.FormatStrFormatter('%d'))
     axes_space.legend(fontsize=8)
@@ -652,7 +666,7 @@ def da_spatiotemporal_ft(ft, stim_cpd, stim_fps, filt_name, fc_s, fc_t, save_fna
     #axes_time.plot(fqtime[1:],1e7/(fqtime[1:]**2),c='black') # 1/f^2 line
     axes_time.set_title('Temporal Frequency')
     axes_time.set_xlabel('Hz')
-    axes_time.set_ylabel(f'{figname} Log Power') 
+    axes_time.set_ylabel('Log Power') 
     axes_time.set_xlim(fqtime[1],fqtime[-1])
     axes_time.xaxis.set_major_formatter(mpl.ticker.FormatStrFormatter('%d'))
     axes_time.legend(fontsize=8)
