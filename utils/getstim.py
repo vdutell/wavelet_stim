@@ -46,7 +46,7 @@ def step_stim_img(width_px, height_px, loc=0.5, stepdn=False, rescale=True, orie
     return(stim)
 
 
-def step_stim(width_px, height_px, len_frames=1, stepdn=False, rescale=True, orient=1, contrast=1, reverse_phase=True):
+def step_stim(width_px, height_px, len_frames=1, stepdn=False, rescale=True, orient=1, contrast=1, stim_type='reverse_phase'):
     '''
     Make a step function stimulus of a given size, orientation, and contrast
     
@@ -56,6 +56,9 @@ def step_stim(width_px, height_px, len_frames=1, stepdn=False, rescale=True, ori
         stepdn (bool):    L-R; U-D; go from white to black (down) vs black to white (up)
         orient (int):    orientation, 1=vertical, 0=horizontal
         contrast (float): float value between 0 and 1 of contrast for stimlulus
+        stim_type (string): type of stimulus we want. Options are:
+                                'reverse_phase' - change phase once during the stim time
+                                 'reverse_phase_flicker' - reverse phase at frame rate
         
     Returns:
         stim (2d float):    step function stimulus  with values in [0,1]
@@ -68,8 +71,14 @@ def step_stim(width_px, height_px, len_frames=1, stepdn=False, rescale=True, ori
     else:
         stim = np.zeros((len_frames, width_px, height_px))
         
-        #if we are doing reverse_phase grating: make every other frame reverse.
-        if(reverse_phase):
+        # reverse phase graing that changes once during stim (halfway through)
+        if(stim_type=='reverse_phase'):
+            halfpoint = len_frames//2
+            stim[:halfpoint,:,:] = step_stim_img(width_px, height_px, loc=0.5, stepdn=False, rescale=True, orient=1, contrast=1)
+            stim[halfpoint:,:,:] = step_stim_img(width_px, height_px, loc=0.5, stepdn=False, rescale=True, orient=1, contrast=1)
+        
+        #reverse_phase grating: make every other frame reverse.
+        if(stim_type=='reverse_phase_flicker'):
             stim[::2,:,:] = step_stim_img(width_px, height_px, loc=0.5, stepdn=False, rescale=True, orient=1, contrast=1)
             stim[1::2,:,:] = step_stim_img(width_px, height_px, loc=0.5, stepdn=True, rescale=True, orient=1, contrast=1)
             
@@ -184,7 +193,8 @@ def generate_spatiotemporal_filtered_stims(stim, stimcpd, spatial_cutoffs,
     for i, frame in enumerate(stim):
         imwtools.writestim(frame, f'{stim_dir}/frame_{i+1}.png')
     # create our raw stim's FT
-    ftools.da_spatiotemporal_ft(ftools.st_ft(stim), stimcpd, stimfps, 'raw', stimcpd, stimfps, f'{stim_dir}/ft_raw.png')
+    fs = ftools.st_ft(stim)
+    ftools.da_spatiotemporal_ft(fs, stimcpd, stimfps, 'raw', stimcpd, stimfps, f'{stim_dir}/ft_raw.png')
 
     # loop through cuttoff frequencies and filter
     for s_cut in spatial_cutoffs:
@@ -202,8 +212,9 @@ def generate_spatiotemporal_filtered_stims(stim, stimcpd, spatial_cutoffs,
                 stim_fname = stim_dir + f'/frame_{i+1}.png'
                 imwtools.writestim(frame, stim_fname)
             #save our fourier transform
-            ftools.da_spatiotemporal_ft(ftools.st_ft(filt_stim), stimcpd, stimfps, 'filtered_stim', s_cut, t_cut, f'{stim_dir}/ft_filtered_stim.png')
-            ftools.da_spatiotemporal_ft(filt, stimcpd, stimfps, 'filter', s_cut, t_cut, f'{stim_dir}/ft_filt.png')
+            fs = ftools.st_ft(filt_stim)
+            ftools.da_spatiotemporal_ft(fs, stimcpd, stimfps, 'filtered_stim', s_cut, t_cut, f'{stim_dir}/ft_filtered_stim.png')
+            ftools.da_spatiotemporal_ft(ftools.azm_avg_frames(stim_filter), stimcpd, stimfps, 'filter', s_cut, t_cut, f'{stim_dir}/ft_filt.png')
 
             print(f'Wrote {stim_fname}')
         
